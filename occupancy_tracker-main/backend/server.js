@@ -9,7 +9,7 @@ const port = 3001;
 app.use(bodyParser.json());
 app.use(cors({
   origin: [
-    'https://occupancy-tracker-02.vercel.app', // Your Vercel URL
+    'https://classroom-occupancy-tracker-nu.vercel.app/', // Your Vercel URL
     'http://localhost:3000' // Local development
   ],
   methods: ['GET', 'POST'],
