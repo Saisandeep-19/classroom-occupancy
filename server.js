@@ -322,6 +322,9 @@ async function initializeData() {
 mongoose.connection.once('open', () => {
     initializeData();
 });
+app.get('/api/test', (req, res) => {
+    res.send('Backend is running!');
+});
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
