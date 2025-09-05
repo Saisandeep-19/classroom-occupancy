@@ -210,7 +210,10 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 app.get('/', (req, res) => res.send('Welcome to Classroom Occupancy Tracker API'));
-    
+app.get('/', (req, res) => {
+  res.send('Welcome to Classroom Occupancy Tracker API');
+});
+
 // Get room status (protected)
 app.get('/api/room-status', authenticateToken, async (req, res) => {
     try {
