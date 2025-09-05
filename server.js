@@ -23,16 +23,12 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/occupancytracker', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
+mongoose.connect(process.env.MONGODB_URI, {
+  // remove useNewUrlParser and useUnifiedTopology — they are deprecated
 })
-    .then(() => {
-        console.log('Connected to MongoDB');
-    })
-    .catch(err => {
-        console.error('MongoDB connection error:', err);
-    });
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('MongoDB connection error:', err));
+
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -213,7 +209,8 @@ app.post('/api/reset-password', async (req, res) => {
         res.status(500).json({ error: 'Error resetting password' });
     }
 });
-
+app.get('/', (req, res) => res.send('Welcome to Classroom Occupancy Tracker API'));
+    
 // Get room status (protected)
 app.get('/api/room-status', authenticateToken, async (req, res) => {
     try {
