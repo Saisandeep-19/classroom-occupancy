@@ -163,7 +163,8 @@ app.post('/api/reset-password-request', async (req, res) => {
             }
         });
 
-        const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}&username=${username}`;
+        const resetUrl = `https://occupancy-tracker-02.vercel.app/reset-password?token=${resetToken}&username=${username}`;
+
         const mailOptions = {
             to: `${username}@example.com`, // Replace with real email in production
             subject: 'Password Reset Request',
@@ -323,7 +324,7 @@ mongoose.connection.once('open', () => {
 });
 
 app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+    console.log(`Server running on port ${port}`);
 }).on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
         console.error(`Port ${port} is already in use. Please try a different port or close the application using this port.`);
