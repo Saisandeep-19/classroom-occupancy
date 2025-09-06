@@ -10,11 +10,13 @@ const path = require('path');
 
 const app = express();
 const port = process.env.PORT;
-if (!port) {
-    console.error('FATAL ERROR: PORT environment variable not set by Railway. Deployment cannot proceed.');
-    process.exit(1); // Fail if PORT is missing
+if (!port || port === 'undefined' || port === '3001') {
+    console.error('FATAL ERROR: PORT environment variable not set or invalid by Railway. Expected a dynamic port (e.g., 5438), got:', port, '. Deployment cannot proceed.');
+    process.exit(1); // Fail if PORT is missing or invalid
 }
+console.log('All env vars:', process.env); // Debug all env vars
 console.log(`Environment PORT: ${process.env.PORT}, Using port: ${port}`); // Debug log
+mongoose.set('strictQuery', true); // Suppress Mongoose deprecation warning
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_123'; // Replace with env variable in production
 
 // Middleware
