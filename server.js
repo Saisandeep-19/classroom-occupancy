@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -17,18 +17,17 @@ app.use(bodyParser.json());
 app.use(cors({
     origin: [
         'https://occupancy-tracker-02.vercel.app',
-        'http://localhost:3000'
+        'http://localhost:3000',
+        'https://classroom-occupancy-production.up.railway.app'
     ],
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+app.use(express.static(path.join(__dirname, '../frontend'))); // Serve frontend static files
 
-mongoose.connect(process.env.MONGODB_URI, {
-  // remove useNewUrlParser and useUnifiedTopology — they are deprecated
-})
+mongoose.connect(process.env.MONGODB_URI, {})
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
-
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -209,10 +208,9 @@ app.post('/api/reset-password', async (req, res) => {
         res.status(500).json({ error: 'Error resetting password' });
     }
 });
+
+// Welcome route
 app.get('/', (req, res) => res.send('Welcome to Classroom Occupancy Tracker API'));
-app.get('/', (req, res) => {
-  res.send('Welcome to Classroom Occupancy Tracker API');
-});
 
 // Get room status (protected)
 app.get('/api/room-status', authenticateToken, async (req, res) => {
@@ -322,11 +320,12 @@ async function initializeData() {
 mongoose.connection.once('open', () => {
     initializeData();
 });
+
 app.get('/api/test', (req, res) => {
     res.send('Backend is running!');
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`Server running on port ${port}`);
 }).on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
