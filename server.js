@@ -9,10 +9,9 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT;
-if (!port || port === 'undefined' || port === '3001') {
-    console.error('FATAL ERROR: PORT environment variable not set or invalid by Railway. Expected a dynamic port (e.g., 5438), got:', port, '. Deployment cannot proceed.');
-    process.exit(1); // Fail if PORT is missing or invalid
+const port = process.env.PORT || 3001;
+if (port === '3001') {
+    console.warn('WARNING: Using fallback port 3001. Railway should provide a dynamic PORT.');
 }
 console.log('All env vars:', process.env); // Debug all env vars
 console.log(`Environment PORT: ${process.env.PORT}, Using port: ${port}`); // Debug log
