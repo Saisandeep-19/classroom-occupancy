@@ -11,8 +11,8 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT;
 if (!port) {
-    console.error('FATAL: PORT environment variable not set by Railway. Deployment cannot proceed.');
-    process.exit(1); // Force failure if PORT is missing
+    console.error('FATAL ERROR: PORT environment variable not set by Railway. Deployment cannot proceed.');
+    process.exit(1); // Fail if PORT is missing
 }
 console.log(`Environment PORT: ${process.env.PORT}, Using port: ${port}`); // Debug log
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_123'; // Replace with env variable in production

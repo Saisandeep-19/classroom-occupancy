@@ -1,26 +1,18 @@
 {
-  "name": "backend",
+  "name": "classroom-occupancy-tracker",
   "version": "1.0.0",
-  "description": "Classroom Occupancy Tracker backend",
   "main": "server.js",
-  "type": "commonjs",
   "scripts": {
     "start": "node server.js"
   },
-  "engines": {
-    "node": "20.x"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "bcrypt": "^6.0.0",
-    "body-parser": "^2.2.0",
+    "express": "^4.17.1",
+    "body-parser": "^1.19.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.18.0",
-    "nodemailer": "^7.0.6"
+    "mongoose": "^6.0.0",
+    "bcrypt": "^5.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "nodemailer": "^6.7.0",
+    "dotenv": "^17.2.2"
   }
 }
