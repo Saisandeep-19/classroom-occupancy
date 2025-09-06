@@ -10,6 +10,7 @@ const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3001;
+console.log(`Environment PORT: ${process.env.PORT}, Using port: ${port}`); // Debug log
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_123'; // Replace with env variable in production
 
 // Middleware
