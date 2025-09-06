@@ -9,7 +9,11 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT;
+if (!port) {
+    console.error('PORT environment variable not set by Railway. Deployment will fail.');
+    process.exit(1); // Fail the deployment if PORT is missing
+}
 console.log(`Environment PORT: ${process.env.PORT}, Using port: ${port}`); // Debug log
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_123'; // Replace with env variable in production
 
@@ -25,7 +29,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Serve static frontend files (now relative to root)
+// Serve static frontend files (relative to root)
 app.use(express.static(path.join(__dirname, 'frontend')));
 
 mongoose.connect(process.env.MONGODB_URI, {})
