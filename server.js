@@ -23,7 +23,9 @@ app.use(cors({
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.static(path.join(__dirname, '../frontend'))); // Serve frontend static files
+
+// Serve static frontend files (if frontend is in parent directory)
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 mongoose.connect(process.env.MONGODB_URI, {})
 .then(() => console.log('Connected to MongoDB'))
@@ -158,7 +160,7 @@ app.post('/api/reset-password-request', async (req, res) => {
             }
         });
 
-        const resetUrl = `https://occupancy-tracker-02.vercel.app/reset-password?token=${resetToken}&username=${username}`;
+        const resetUrl = `https://classroom-occupancy-production.up.railway.app/reset-password?token=${resetToken}&username=${username}`;
 
         const mailOptions = {
             to: `${username}@example.com`, // Replace with real email in production
