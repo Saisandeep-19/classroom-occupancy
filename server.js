@@ -25,8 +25,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Serve static frontend files (if frontend is in parent directory)
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Serve static frontend files (now relative to root)
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 mongoose.connect(process.env.MONGODB_URI, {})
 .then(() => console.log('Connected to MongoDB'))
