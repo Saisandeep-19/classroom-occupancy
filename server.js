@@ -156,7 +156,7 @@ app.post('/api/login', async (req, res) => {
         }
 
         const token = jwt.sign({ username: user.username, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '1h' });
-        console.log(`User ${username} logged in successfully`);
+        console.log(`User ${username} logged in successfully, isAdmin: ${user.isAdmin}`);
         res.json({ message: 'Login successful', token, isAdmin: user.isAdmin });
     } catch (error) {
         console.error('Error during login:', error.message);
@@ -360,10 +360,16 @@ async function initializeData() {
         }
 
         const userCount = await User.countDocuments();
-        if (userCount === 0) {
-            const hashedPassword = await bcrypt.hash('1234', 10);
+        const facultyUser = await User.findOne({ username: 'faculty' });
+        const hashedPassword = await bcrypt.hash('1234', 10);
+        if (!facultyUser) {
             await User.create({ username: 'faculty', password: hashedPassword, isAdmin: true });
-            console.log('Initialized default admin user: faculty');
+            console.log('Created new faculty user with isAdmin: true');
+        } else if (!facultyUser.isAdmin) {
+            await User.updateOne({ username: 'faculty' }, { $set: { isAdmin: true, password: hashedPassword } });
+            console.log('Updated existing faculty user to isAdmin: true');
+        } else {
+            console.log('Faculty user already exists with isAdmin: true, no action needed');
         }
     } catch (error) {
         console.error('Error initializing data:', error.message);
