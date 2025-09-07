@@ -795,14 +795,6 @@
                 <a href="#" class="forgot-password" onclick="forgotPassword()">Forgot Password?</a>
                 <a href="#" class="forgot-password" id="create-account-link" onclick="showPasskeyModal()">Create Account</a>
                 <p class="error-message" id="user-error"></p>
-                <!-- Temporary token input for testing -->
-                <div class="input-container" style="margin-top: 10px;">
-                    <input type="text" id="manual-token" placeholder="Enter Token for Testing" style="width: 100%; padding: 10px;">
-                    <label class="label">Token</label>
-                    <span class="topline"></span>
-                    <span class="underline"></span>
-                </div>
-                <button class="login-button" onclick="setManualToken()" style="margin-top: 5px;">Set Token</button>
             </div>
             <button class="check-status-button" onclick="checkStatus()">Check Status Without Login</button>
         </div>
@@ -1449,8 +1441,31 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    closePasskeyModal();
-                    document.getElementById('create-account-modal').style.display = 'flex';
+                    // Automatically log in as admin after passkey validation
+                    fetch(`${API_URL}/api/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: 'faculty', password: '1234' })
+                    })
+                    .then(response => response.json())
+                    .then(loginData => {
+                        if (loginData.token) {
+                            localStorage.setItem('token', loginData.token);
+                            isAdmin = loginData.isAdmin || false;
+                            closePasskeyModal();
+                            document.getElementById('create-account-modal').style.display = 'flex';
+                        } else {
+                            errorMessage.innerText = 'Failed to log in as admin';
+                            errorMessage.style.display = 'block';
+                            setTimeout(() => errorMessage.style.display = 'none', 2000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during admin login:', error);
+                        errorMessage.innerText = 'Error logging in as admin';
+                        errorMessage.style.display = 'block';
+                        setTimeout(() => errorMessage.style.display = 'none', 2000);
+                    });
                 } else {
                     errorMessage.innerText = 'Invalid passkey';
                     errorMessage.style.display = 'block';
@@ -1607,19 +1622,6 @@
             });
         }
 
-        function setManualToken() {
-            const token = document.getElementById('manual-token').value;
-            if (token) {
-                localStorage.setItem('token', token);
-                document.getElementById('user-error').classList.remove('show');
-                alert('Token set successfully. Try creating an account now.');
-            } else {
-                document.getElementById('user-error').innerText = 'Please enter a valid token.';
-                document.getElementById('user-error').classList.add('show');
-                setTimeout(() => document.getElementById('user-error').classList.remove('show'), 2000);
-            }
-        }
-
         window.onclick = function(event) {
             const forgotModal = document.getElementById('forgot-password-modal');
             const createModal = document.getElementById('create-account-modal');
@@ -1636,4 +1638,5 @@
             }
         }
     </script>
-</body></html>
+</body>
+</html>
