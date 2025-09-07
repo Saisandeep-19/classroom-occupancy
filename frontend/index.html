@@ -721,19 +721,21 @@
         <div class="login-wrapper">
             <div class="login-container" id="user-login">
                 <h2>User Login</h2>
-                <div class="input-container">
-                    <input type="text" id="user-username" placeholder="Username">
-                    <label class="label">Username</label>
-                    <span class="topline"></span>
-                    <span class="underline"></span>
-                </div>
-                <div class="input-container">
-                    <input type="password" id="user-password" placeholder="Password">
-                    <label class="label">Password</label>
-                    <span class="topline"></span>
-                    <span class="underline"></span>
-                </div>
-                <button class="login-button" onclick="login('user')">Login</button>
+                <form id="loginForm">
+                    <div class="input-container">
+                        <input type="text" id="user-username" name="username" placeholder="Username" required>
+                        <label class="label">Username</label>
+                        <span class="topline"></span>
+                        <span class="underline"></span>
+                    </div>
+                    <div class="input-container">
+                        <input type="password" id="user-password" name="password" placeholder="Password" required>
+                        <label class="label">Password</label>
+                        <span class="topline"></span>
+                        <span class="underline"></span>
+                    </div>
+                    <button type="submit" class="login-button">Login</button>
+                </form>
                 <a href="#" class="forgot-password" onclick="forgotPassword()">Forgot Password?</a>
                 <a href="#" class="forgot-password" onclick="showCreateAccountModal()" style="margin-top: 5px;">Create Account</a>
                 <p class="error-message" id="user-error"></p>
@@ -849,7 +851,8 @@
             }
         });
 
-        function login(userType) {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
             const usernameInput = document.getElementById("user-username");
             const passwordInput = document.getElementById("user-password");
             const errorMessage = document.getElementById("user-error");
@@ -863,44 +866,43 @@
 
             const username = usernameInput.value;
             const password = passwordInput.value;
+            errorMessage.classList.remove('show');
+            const loginButton = e.target.querySelector('.login-button');
+            loginButton.disabled = true;
+            loginButton.textContent = 'Logging in...';
 
-            fetch(`${API_URL}/api/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    console.log("Invalid credentials");
-                    errorMessage.innerText = data.error;
-                    errorMessage.classList.add("show");
-                    setTimeout(() => {
-                        errorMessage.classList.remove("show");
-                    }, 2000);
-                } else {
-                    console.log("Credentials valid");
-                    localStorage.setItem('token', data.token);
-                    currentUserType = userType;
-                    userLogin.style.display = "none";
-                    document.querySelector('.check-status-button').style.display = "none";
-                    trackerContainer.style.display = "block";
-                    document.getElementById("user-options").style.display = "block";
-                    document.getElementById("user-logout-btn").style.display = "inline-block";
-                    document.getElementById("initial-text").style.display = "none";
-                    updateRoomStatus();
-                    updateLabStatus();
+            try {
+                const response = await fetch(`${API_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Login failed');
                 }
-            })
-            .catch(error => {
+
+                localStorage.setItem('token', data.token);
+                currentUserType = 'user';
+                userLogin.style.display = "none";
+                document.querySelector('.check-status-button').style.display = "none";
+                trackerContainer.style.display = "block";
+                document.getElementById("user-options").style.display = "block";
+                document.getElementById("user-logout-btn").style.display = "inline-block";
+                document.getElementById("initial-text").style.display = "none";
+                updateRoomStatus();
+                updateLabStatus();
+            } catch (error) {
                 console.error('Error during login:', error);
-                errorMessage.innerText = "Error logging in";
+                errorMessage.innerText = error.message;
                 errorMessage.classList.add("show");
-                setTimeout(() => {
-                    errorMessage.classList.remove("show");
-                }, 2000);
-            });
-        }
+                setTimeout(() => errorMessage.classList.remove("show"), 2000);
+            } finally {
+                loginButton.disabled = false;
+                loginButton.textContent = 'Login';
+            }
+        });
 
         function checkStatus() {
             console.log("Checking status");
@@ -935,7 +937,7 @@
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token || ''}`
                 }
             })
                 .then(response => {
@@ -1015,7 +1017,7 @@
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token || ''}`
                 }
             })
                 .then(response => {
