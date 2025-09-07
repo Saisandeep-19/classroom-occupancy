@@ -835,8 +835,8 @@
                 <p>Enter your username to receive password reset instructions.</p>
                 <input type="text" id="reset-username" placeholder="Username">
                 <button class="reset-password-btn" onclick="resetPassword()">Send Reset Link</button>
-                <p class="success-message" id="reset-success">Reset instructions have been sent to your email.</p>
-                <p class="error-message" id="reset-error">Username not found. Please try again.</p>
+                <p class="success-message" id="reset-success" style="display: none;">Reset instructions have been sent to your email.</p>
+                <p class="error-message" id="reset-error" style="display: none;">Username not found. Please try again.</p>
             </div>
         </div>
 
@@ -1383,14 +1383,10 @@
         function closeForgotPasswordModal() {
             document.getElementById('forgot-password-modal').style.display = 'none';
             document.getElementById('reset-username').value = '';
-            document.getElementById('reset-success').style.display = 'none';
-            document.getElementById('reset-error').style.display = 'none';
         }
 
         function resetPassword() {
             const username = document.getElementById('reset-username').value;
-            const successMessage = document.getElementById('reset-success');
-            const errorMessage = document.getElementById('reset-error');
 
             fetch(`${API_URL}/api/reset-password-request`, {
                 method: 'POST',
@@ -1400,12 +1396,9 @@
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    errorMessage.innerText = data.error;
-                    errorMessage.style.display = 'block';
-                    successMessage.style.display = 'none';
+                    alert(data.error); // Show error as popup
                 } else {
-                    successMessage.style.display = 'block';
-                    errorMessage.style.display = 'none';
+                    alert(data.message); // Show message as popup
                     setTimeout(() => {
                         closeForgotPasswordModal();
                     }, 2000);
@@ -1413,9 +1406,7 @@
             })
             .catch(error => {
                 console.error('Error during password reset request:', error);
-                errorMessage.innerText = 'Error processing request';
-                errorMessage.style.display = 'block';
-                successMessage.style.display = 'none';
+                alert('Error processing request');
             });
         }
 

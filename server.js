@@ -169,44 +169,16 @@ app.post('/api/reset-password-request', async (req, res) => {
     try {
         console.log(`Attempting password reset request for user: ${username}`);
         const user = await User.findOne({ username });
-        if (!user) {
+        if (user) {
+            console.log(`User ${username} found`);
+            res.json({ message: 'contact your admin to change the password' });
+        } else {
             console.log(`User ${username} not found`);
-            return res.status(404).json({ error: 'Username not found' });
+            res.status(404).json({ error: 'No such username exists' });
         }
-
-        const resetToken = require('crypto').randomBytes(32).toString('hex');
-        const resetTokenExpiry = Date.now() + 3600000; // 1 hour expiry
-        await User.updateOne(
-            { username },
-            { resetToken, resetTokenExpiry }
-        );
-
-        const transporter = nodemailer.createTransport({
-            service: 'Gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
-
-        const resetUrl = `https://classroom-occupancy-production.up.railway.app/reset-password?token=${resetToken}&username=${encodeURIComponent(username)}`;
-
-        const mailOptions = {
-            to: `${username}@example.com`,
-            subject: 'Password Reset Request',
-            html: `
-                <p>You requested a password reset for Classroom Occupancy Tracker.</p>
-                <p>Click <a href="${resetUrl}">here</a> to reset your password.</p>
-                <p>This link expires in 1 hour.</p>
-            `
-        };
-
-        await transporter.sendMail(mailOptions);
-        console.log(`Password reset email sent for user ${username}`);
-        res.json({ message: 'Reset instructions sent to your email' });
     } catch (error) {
         console.error('Error during password reset request:', error.message);
-        res.status(500).json({ error: 'Error processing password reset' });
+        res.status(500).json({ error: 'Error processing password reset request' });
     }
 });
 
