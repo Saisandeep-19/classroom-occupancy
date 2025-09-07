@@ -1474,35 +1474,6 @@
             const errorMessage = document.getElementById('create-error');
             let token = localStorage.getItem('token');
 
-            if (!token) {
-                // Attempt to log in with default admin credentials if no token
-                fetch(`${API_URL}/api/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: 'faculty', password: '1234' })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (response.ok) {
-                        token = data.token;
-                        localStorage.setItem('token', token);
-                        proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage);
-                    } else {
-                        errorMessage.innerText = 'Unable to authenticate. Please log in first.';
-                        errorMessage.style.display = 'block';
-                    }
-                })
-                .catch(err => {
-                    console.error('Login fallback failed:', err);
-                    errorMessage.innerText = 'Error during authentication.';
-                    errorMessage.style.display = 'block';
-                });
-            } else {
-                proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage);
-            }
-        }
-
-        function proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage) {
             if (!username || !password || !confirmPassword) {
                 errorMessage.innerText = 'All fields are required.';
                 errorMessage.style.display = 'block';
@@ -1517,6 +1488,35 @@
                 return;
             }
 
+            if (!token) {
+                // Attempt to log in with default admin credentials if no token
+                fetch(`${API_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'admin123' }) // Update these to match your server
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Fallback login failed: ' + (response.statusText || 'Invalid credentials'));
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                    proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage);
+                })
+                .catch(err => {
+                    console.error('Login fallback failed:', err);
+                    errorMessage.innerText = 'Please log in with admin credentials first or check server status.';
+                    errorMessage.style.display = 'block';
+                });
+            } else {
+                proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage);
+            }
+        }
+
+        function proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage) {
             fetch(`${API_URL}/api/register`, {
                 method: 'POST',
                 headers: {
@@ -1541,7 +1541,7 @@
             })
             .catch(error => {
                 console.error('Error creating account:', error);
-                errorMessage.innerText = 'Error creating account';
+                errorMessage.innerText = 'Error creating account: ' + error.message;
                 errorMessage.style.display = 'block';
                 successMessage.style.display = 'none';
             });
