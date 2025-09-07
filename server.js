@@ -53,7 +53,8 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     resetToken: { type: String },
     resetTokenExpiry: { type: Date },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    isAdmin: { type: Boolean, default: false } // Add admin flag
 });
 
 const User = mongoose.model('User', userSchema);
@@ -93,8 +94,19 @@ const authenticateToken = (req, res, next) => {
     }
 };
 
-// Register a new user
-app.post('/api/register', async (req, res) => {
+// New middleware to check admin role
+const authenticateAdmin = (req, res, next) => {
+    authenticateToken(req, res, () => {
+        if (req.user && req.user.isAdmin) {
+            next();
+        } else {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+    });
+};
+
+// Register a new user (admin only)
+app.post('/api/register', authenticateAdmin, async (req, res) => {
     const { username, password } = req.body;
     try {
         console.log(`Attempting to register user: ${username}`);
@@ -141,7 +153,7 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ username: user.username }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ username: user.username, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '1h' });
         console.log(`User ${username} logged in successfully`);
         res.json({ message: 'Login successful', token });
     } catch (error) {
@@ -358,8 +370,8 @@ async function initializeData() {
         const userCount = await User.countDocuments();
         if (userCount === 0) {
             const hashedPassword = await bcrypt.hash('1234', 10);
-            await User.create({ username: 'faculty', password: hashedPassword });
-            console.log('Initialized default user: faculty');
+            await User.create({ username: 'faculty', password: hashedPassword, isAdmin: true }); // Default admin
+            console.log('Initialized default admin user: faculty');
         }
     } catch (error) {
         console.error('Error initializing data:', error.message);

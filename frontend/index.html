@@ -737,7 +737,7 @@
                     <button type="submit" class="login-button">Login</button>
                 </form>
                 <a href="#" class="forgot-password" onclick="forgotPassword()">Forgot Password?</a>
-                <a href="#" class="forgot-password" onclick="showCreateAccountModal()" style="margin-top: 5px;">Create Account</a>
+                <a href="#" class="forgot-password" id="create-account-link" onclick="showCreateAccountModal()" style="margin-top: 5px; display: none;">Create Account</a>
                 <p class="error-message" id="user-error"></p>
             </div>
             <button class="check-status-button" onclick="checkStatus()">Check Status Without Login</button>
@@ -828,6 +828,7 @@
         let roomStatus = {};
         let labStatus = {};
         let currentUserType = null;
+        let isAdmin = false;
 
         function createParticles() {
             const particlesContainer = document.getElementById('particles');
@@ -884,6 +885,7 @@
                 }
 
                 localStorage.setItem('token', data.token);
+                isAdmin = data.isAdmin || false; // Set admin status from login response
                 currentUserType = 'user';
                 userLogin.style.display = "none";
                 document.querySelector('.check-status-button').style.display = "none";
@@ -891,6 +893,7 @@
                 document.getElementById("user-options").style.display = "block";
                 document.getElementById("user-logout-btn").style.display = "inline-block";
                 document.getElementById("initial-text").style.display = "none";
+                document.getElementById("create-account-link").style.display = isAdmin ? "block" : "none"; // Show only for admin
                 updateRoomStatus();
                 updateLabStatus();
             } catch (error) {
@@ -1178,6 +1181,7 @@
             console.log("Logging out");
             localStorage.removeItem('token');
             currentUserType = null;
+            isAdmin = false;
             document.getElementById("user-login").style.display = "block";
             document.querySelector('.check-status-button').style.display = "block";
             document.getElementById("tracker-container").style.display = "none";
@@ -1185,6 +1189,7 @@
             document.getElementById("user-logout-btn").style.display = "none";
             document.getElementById("logout-btn").style.display = "none";
             document.getElementById("exit-btn").style.display = "none";
+            document.getElementById("create-account-link").style.display = "none";
             document.getElementById("initial-text").style.display = "block";
             
             // Clear input fields
@@ -1202,6 +1207,7 @@
             document.getElementById("user-logout-btn").style.display = "none";
             document.getElementById("logout-btn").style.display = "none";
             document.getElementById("exit-btn").style.display = "none";
+            document.getElementById("create-account-link").style.display = "none";
             document.getElementById("initial-text").style.display = "block";
         }
 
@@ -1353,6 +1359,10 @@
         }
 
         function showCreateAccountModal() {
+            if (!isAdmin) {
+                alert("Only admins can create accounts.");
+                return;
+            }
             document.getElementById('create-account-modal').style.display = 'flex';
         }
 
@@ -1366,6 +1376,13 @@
         }
 
         function createAccount() {
+            if (!isAdmin) {
+                document.getElementById('create-error').innerText = "Only admins can create accounts.";
+                document.getElementById('create-error').style.display = 'block';
+                document.getElementById('create-success').style.display = 'none';
+                return;
+            }
+
             const username = document.getElementById('new-username').value;
             const password = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
@@ -1388,7 +1405,10 @@
 
             fetch(`${API_URL}/api/register`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
                 body: JSON.stringify({ username, password })
             })
             .then(response => response.json())
