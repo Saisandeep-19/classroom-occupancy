@@ -1441,40 +1441,30 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Automatically log in as admin after passkey validation
-                    fetch(`${API_URL}/api/login`, {
+                    // Attempt to log in as admin
+                    return fetch(`${API_URL}/api/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: 'faculty', password: '1234' })
-                    })
-                    .then(response => response.json())
-                    .then(loginData => {
-                        if (loginData.token) {
-                            localStorage.setItem('token', loginData.token);
-                            isAdmin = loginData.isAdmin || false;
-                            closePasskeyModal();
-                            document.getElementById('create-account-modal').style.display = 'flex';
-                        } else {
-                            errorMessage.innerText = 'Failed to log in as admin';
-                            errorMessage.style.display = 'block';
-                            setTimeout(() => errorMessage.style.display = 'none', 2000);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error during admin login:', error);
-                        errorMessage.innerText = 'Error logging in as admin';
-                        errorMessage.style.display = 'block';
-                        setTimeout(() => errorMessage.style.display = 'none', 2000);
-                    });
+                    }).then(response => response.json());
                 } else {
-                    errorMessage.innerText = 'Invalid passkey';
-                    errorMessage.style.display = 'block';
-                    setTimeout(() => errorMessage.style.display = 'none', 2000);
+                    throw new Error('Invalid passkey');
+                }
+            })
+            .then(loginData => {
+                if (loginData.token) {
+                    localStorage.setItem('token', loginData.token);
+                    isAdmin = loginData.isAdmin || false;
+                    console.log('Admin login successful, token:', loginData.token, 'isAdmin:', isAdmin);
+                    closePasskeyModal();
+                    document.getElementById('create-account-modal').style.display = 'flex';
+                } else {
+                    throw new Error('Failed to log in as admin');
                 }
             })
             .catch(error => {
-                console.error('Error validating passkey:', error);
-                errorMessage.innerText = 'Error validating passkey';
+                console.error('Error in passkey validation or login:', error);
+                errorMessage.innerText = error.message || 'Error validating passkey or logging in';
                 errorMessage.style.display = 'block';
                 setTimeout(() => errorMessage.style.display = 'none', 2000);
             });
@@ -1517,6 +1507,7 @@
                 return;
             }
 
+            console.log('Attempting to create account with token:', token);
             proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage);
         }
 
@@ -1529,10 +1520,13 @@
                 },
                 body: JSON.stringify({ username, password })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Register response status:', response.status);
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
-                    errorMessage.innerText = data.error;
+                    errorMessage.innerText = data.error || 'Registration failed';
                     errorMessage.style.display = 'block';
                     successMessage.style.display = 'none';
                 } else {
