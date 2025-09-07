@@ -709,6 +709,62 @@
             background: rgba(244, 91, 105, 0.1);
             display: none;
         }
+
+        #passkey-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #passkey-container {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(30, 136, 229, 0.2);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        #passkey-container input {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        #passkey-container input:focus {
+            border-color: var(--primaryBlue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+        }
+
+        #passkey-container button {
+            background: var(--primaryBlue);
+            color: var(--white);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        #passkey-container button:hover {
+            background: var(--darkBlue);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -737,7 +793,7 @@
                     <button type="submit" class="login-button">Login</button>
                 </form>
                 <a href="#" class="forgot-password" onclick="forgotPassword()">Forgot Password?</a>
-                <a href="#" class="forgot-password" id="create-account-link" onclick="showCreateAccountModal()" style="margin-top: 5px; display: none;">Create Account</a>
+                <a href="#" class="forgot-password" id="create-account-link" onclick="showPasskeyModal()">Create Account</a>
                 <p class="error-message" id="user-error"></p>
             </div>
             <button class="check-status-button" onclick="checkStatus()">Check Status Without Login</button>
@@ -809,6 +865,16 @@
                 <p class="error-message" id="reset-password-error"></p>
             </div>
         </div>
+
+        <div id="passkey-modal" class="forgot-password-modal">
+            <div id="passkey-container">
+                <span class="close-modal" onclick="closePasskeyModal()">×</span>
+                <h3>Enter Admin Passkey</h3>
+                <input type="password" id="passkey-input" placeholder="Passkey">
+                <button onclick="validatePasskey()">Submit</button>
+                <p class="error-message" id="passkey-error"></p>
+            </div>
+        </div>
     
         <div id="particles" class="particles"></div>
     </div>
@@ -843,7 +909,6 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             createParticles();
-            // Check for password reset token in URL
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             const username = urlParams.get('username');
@@ -885,7 +950,7 @@
                 }
 
                 localStorage.setItem('token', data.token);
-                isAdmin = data.isAdmin || false; // Set admin status from login response
+                isAdmin = data.isAdmin || false;
                 currentUserType = 'user';
                 userLogin.style.display = "none";
                 document.querySelector('.check-status-button').style.display = "none";
@@ -893,7 +958,6 @@
                 document.getElementById("user-options").style.display = "block";
                 document.getElementById("user-logout-btn").style.display = "inline-block";
                 document.getElementById("initial-text").style.display = "none";
-                document.getElementById("create-account-link").style.display = isAdmin ? "block" : "none"; // Show only for admin
                 updateRoomStatus();
                 updateLabStatus();
             } catch (error) {
@@ -1189,10 +1253,8 @@
             document.getElementById("user-logout-btn").style.display = "none";
             document.getElementById("logout-btn").style.display = "none";
             document.getElementById("exit-btn").style.display = "none";
-            document.getElementById("create-account-link").style.display = "none";
             document.getElementById("initial-text").style.display = "block";
             
-            // Clear input fields
             document.getElementById("user-username").value = "";
             document.getElementById("user-password").value = "";
         }
@@ -1207,7 +1269,6 @@
             document.getElementById("user-logout-btn").style.display = "none";
             document.getElementById("logout-btn").style.display = "none";
             document.getElementById("exit-btn").style.display = "none";
-            document.getElementById("create-account-link").style.display = "none";
             document.getElementById("initial-text").style.display = "block";
         }
 
@@ -1358,12 +1419,40 @@
             });
         }
 
-        function showCreateAccountModal() {
-            if (!isAdmin) {
-                alert("Only admins can create accounts.");
-                return;
-            }
-            document.getElementById('create-account-modal').style.display = 'flex';
+        function showPasskeyModal() {
+            document.getElementById('passkey-modal').style.display = 'flex';
+            document.getElementById('passkey-input').value = '';
+            document.getElementById('passkey-error').style.display = 'none';
+        }
+
+        function closePasskeyModal() {
+            document.getElementById('passkey-modal').style.display = 'none';
+        }
+
+        function validatePasskey() {
+            const passkey = document.getElementById('passkey-input').value;
+            const errorMessage = document.getElementById('passkey-error');
+
+            fetch(`${API_URL}/api/validate-passkey`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ passkey })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closePasskeyModal();
+                    document.getElementById('create-account-modal').style.display = 'flex';
+                } else {
+                    errorMessage.innerText = 'Invalid passkey';
+                    errorMessage.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error validating passkey:', error);
+                errorMessage.innerText = 'Error validating passkey';
+                errorMessage.style.display = 'block';
+            });
         }
 
         function closeCreateAccountModal() {
@@ -1376,18 +1465,12 @@
         }
 
         function createAccount() {
-            if (!isAdmin) {
-                document.getElementById('create-error').innerText = "Only admins can create accounts.";
-                document.getElementById('create-error').style.display = 'block';
-                document.getElementById('create-success').style.display = 'none';
-                return;
-            }
-
             const username = document.getElementById('new-username').value;
             const password = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
             const successMessage = document.getElementById('create-success');
             const errorMessage = document.getElementById('create-error');
+            const token = localStorage.getItem('token');
 
             if (!username || !password || !confirmPassword) {
                 errorMessage.innerText = 'All fields are required.';
@@ -1407,7 +1490,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ username, password })
             })
@@ -1451,7 +1534,6 @@
             document.getElementById('user-login').style.display = 'block';
             document.getElementById('initial-text').style.display = 'block';
             document.querySelector('.check-status-button').style.display = 'block';
-            // Clear URL parameters
             window.history.pushState({}, document.title, window.location.pathname);
         }
 
@@ -1509,14 +1591,15 @@
             const forgotModal = document.getElementById('forgot-password-modal');
             const createModal = document.getElementById('create-account-modal');
             const resetModal = document.getElementById('reset-password-modal');
+            const passkeyModal = document.getElementById('passkey-modal');
             if (event.target === forgotModal) {
                 closeForgotPasswordModal();
             } else if (event.target === createModal) {
                 closeCreateAccountModal();
             } else if (event.target === resetModal) {
                 closeResetPasswordModal();
+            } else if (event.target === passkeyModal) {
+                closePasskeyModal();
             }
         }
     </script>
-</body>
-</html>

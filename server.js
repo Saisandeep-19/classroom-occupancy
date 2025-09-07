@@ -17,8 +17,8 @@ console.log('All env vars:', process.env); // Debug all env vars
 console.log(`Environment PORT: ${process.env.PORT}, Using port: ${port}`); // Debug log
 mongoose.set('strictQuery', true); // Suppress Mongoose deprecation warning
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_123'; // Use env var in production
+const ADMIN_PASSKEY = process.env.ADMIN_PASSKEY || 'admin123'; // Add passkey to env (default for testing)
 
-// Middleware
 app.use(bodyParser.json());
 app.use(cors({
     origin: (origin, callback) => {
@@ -37,7 +37,6 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Serve static frontend files (relative to root)
 app.use(express.static(path.join(__dirname, 'frontend')));
 
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -47,19 +46,17 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
         process.exit(1);
     });
 
-// User Schema
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     resetToken: { type: String },
     resetTokenExpiry: { type: Date },
     createdAt: { type: Date, default: Date.now },
-    isAdmin: { type: Boolean, default: false } // Add admin flag
+    isAdmin: { type: Boolean, default: false }
 });
 
 const User = mongoose.model('User', userSchema);
 
-// Room Schema
 const roomSchema = new mongoose.Schema({
     room: { type: String, required: true, unique: true },
     status: { type: Boolean, default: false }
@@ -67,7 +64,6 @@ const roomSchema = new mongoose.Schema({
 
 const Room = mongoose.model('Room', roomSchema);
 
-// Lab Schema
 const labSchema = new mongoose.Schema({
     lab: { type: String, required: true, unique: true },
     status: { type: Boolean, default: false }
@@ -75,12 +71,10 @@ const labSchema = new mongoose.Schema({
 
 const Lab = mongoose.model('Lab', labSchema);
 
-// Middleware to verify JWT
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+    const token = authHeader && authHeader.split(' ')[1];
     if (!token) {
-        console.log('No token provided');
         return res.status(401).json({ error: 'Access denied, no token provided' });
     }
 
@@ -94,7 +88,6 @@ const authenticateToken = (req, res, next) => {
     }
 };
 
-// New middleware to check admin role
 const authenticateAdmin = (req, res, next) => {
     authenticateToken(req, res, () => {
         if (req.user && req.user.isAdmin) {
@@ -105,7 +98,17 @@ const authenticateAdmin = (req, res, next) => {
     });
 };
 
-// Register a new user (admin only)
+// Validate passkey endpoint
+app.post('/api/validate-passkey', (req, res) => {
+    const { passkey } = req.body;
+    if (passkey === ADMIN_PASSKEY) {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ error: 'Invalid passkey' });
+    }
+});
+
+// Register a new user (admin only with passkey validation)
 app.post('/api/register', authenticateAdmin, async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -132,7 +135,6 @@ app.post('/api/register', authenticateAdmin, async (req, res) => {
     }
 });
 
-// User login
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -155,14 +157,13 @@ app.post('/api/login', async (req, res) => {
 
         const token = jwt.sign({ username: user.username, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '1h' });
         console.log(`User ${username} logged in successfully`);
-        res.json({ message: 'Login successful', token });
+        res.json({ message: 'Login successful', token, isAdmin: user.isAdmin });
     } catch (error) {
         console.error('Error during login:', error.message);
         res.status(500).json({ error: 'Error logging in' });
     }
 });
 
-// Request password reset
 app.post('/api/reset-password-request', async (req, res) => {
     const { username } = req.body;
     try {
@@ -191,7 +192,7 @@ app.post('/api/reset-password-request', async (req, res) => {
         const resetUrl = `https://classroom-occupancy-production.up.railway.app/reset-password?token=${resetToken}&username=${encodeURIComponent(username)}`;
 
         const mailOptions = {
-            to: `${username}@example.com`, // Replace with dynamic email in production
+            to: `${username}@example.com`,
             subject: 'Password Reset Request',
             html: `
                 <p>You requested a password reset for Classroom Occupancy Tracker.</p>
@@ -209,7 +210,6 @@ app.post('/api/reset-password-request', async (req, res) => {
     }
 });
 
-// Reset password with token
 app.post('/api/reset-password', async (req, res) => {
     const { username, token, newPassword } = req.body;
     try {
@@ -239,10 +239,8 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
-// Welcome route
 app.get('/', (req, res) => res.send('Welcome to Classroom Occupancy Tracker API'));
 
-// Get room status (protected)
 app.get('/api/room-status', authenticateToken, async (req, res) => {
     try {
         const rooms = await Room.find();
@@ -258,7 +256,6 @@ app.get('/api/room-status', authenticateToken, async (req, res) => {
     }
 });
 
-// Update room status (protected)
 app.post('/api/room-status', authenticateToken, async (req, res) => {
     const { room, status } = req.body;
     try {
@@ -276,7 +273,6 @@ app.post('/api/room-status', authenticateToken, async (req, res) => {
     }
 });
 
-// Get lab status (protected)
 app.get('/api/lab-status', authenticateToken, async (req, res) => {
     try {
         const labs = await Lab.find();
@@ -292,7 +288,6 @@ app.get('/api/lab-status', authenticateToken, async (req, res) => {
     }
 });
 
-// Update lab status (protected)
 app.post('/api/lab-status', authenticateToken, async (req, res) => {
     const { lab, status } = req.body;
     try {
@@ -310,7 +305,6 @@ app.post('/api/lab-status', authenticateToken, async (req, res) => {
     }
 });
 
-// Get public room status (unprotected)
 app.get('/api/public/room-status', async (req, res) => {
     try {
         const rooms = await Room.find();
@@ -326,7 +320,6 @@ app.get('/api/public/room-status', async (req, res) => {
     }
 });
 
-// Get public lab status (unprotected)
 app.get('/api/public/lab-status', async (req, res) => {
     try {
         const labs = await Lab.find();
@@ -342,7 +335,6 @@ app.get('/api/public/lab-status', async (req, res) => {
     }
 });
 
-// Initialize default rooms and labs if empty
 async function initializeData() {
     try {
         const roomCount = await Room.countDocuments();
@@ -370,7 +362,7 @@ async function initializeData() {
         const userCount = await User.countDocuments();
         if (userCount === 0) {
             const hashedPassword = await bcrypt.hash('1234', 10);
-            await User.create({ username: 'faculty', password: hashedPassword, isAdmin: true }); // Default admin
+            await User.create({ username: 'faculty', password: hashedPassword, isAdmin: true });
             console.log('Initialized default admin user: faculty');
         }
     } catch (error) {
@@ -378,7 +370,6 @@ async function initializeData() {
     }
 }
 
-// Run initialization after MongoDB connection
 mongoose.connection.once('open', () => {
     initializeData();
 });
