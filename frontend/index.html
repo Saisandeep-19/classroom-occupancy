@@ -905,7 +905,7 @@
         });
 
         function checkStatus() {
-            console.log("Checking status");
+            console.log("Checking status, setting currentUserType to viewer");
             const userLogin = document.getElementById("user-login");
             const trackerContainer = document.getElementById("tracker-container");
 
@@ -922,8 +922,8 @@
             document.getElementById("exit-btn").style.display = "inline-block";
             document.getElementById("logout-btn").style.display = "none";
             document.getElementById("initial-text").style.display = "none";
-            updateRoomStatus();
-            updateLabStatus();
+            updateRoomStatusPublic();
+            updateLabStatusPublic();
         }
 
         function updateRoomStatus() {
@@ -972,6 +972,52 @@
                 })
                 .catch(error => {
                     console.error('Error fetching room status:', error);
+                    alert(`Error fetching room status: ${error.message}. Check console for details.`);
+                });
+        }
+
+        function updateRoomStatusPublic() {
+            const roomContainer = document.getElementById("rooms");
+            if (!roomContainer) {
+                console.error("Rooms container not found");
+                return;
+            }
+            fetch(`${API_URL}/api/public/room-status`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Fetched public room data:', data);
+                    if (Object.keys(data).length === 0) {
+                        console.warn('No room data received from server');
+                    }
+                    roomStatus = data || {};
+                    roomContainer.innerHTML = "";
+                    Object.keys(floors).forEach(floor => {
+                        floors[floor].forEach(room => {
+                            const roomDiv = document.createElement("div");
+                            roomDiv.className = `room ${roomStatus[room] ? 'occupied' : 'available'}`;
+                            roomDiv.innerHTML = `
+                                <strong>${room}</strong>: 
+                                <span>${roomStatus[room] !== undefined ? (roomStatus[room] ? "Occupied" : "Available") : "Unknown"}</span>
+                                ${currentUserType === 'user' ? `<button onclick="toggleRoomStatus('${room}')">Toggle</button>` : ''}
+                            `;
+                            roomContainer.appendChild(roomDiv);
+                        });
+                    });
+                    $(roomContainer).children().hide().each(function(index) {
+                        $(this).delay(index * 50).fadeIn(200);
+                    });
+                    suggestAlternativeRooms();
+                })
+                .catch(error => {
+                    console.error('Error fetching public room status:', error);
                     alert(`Error fetching room status: ${error.message}. Check console for details.`);
                 });
         }
@@ -1050,6 +1096,50 @@
                 })
                 .catch(error => {
                     console.error('Error fetching lab status:', error);
+                    alert(`Error fetching lab status: ${error.message}. Check console for details.`);
+                });
+        }
+        
+        function updateLabStatusPublic() {
+            const labContainer = document.getElementById("labs-container");
+            if (!labContainer) {
+                console.error("Labs container not found");
+                return;
+            }
+            fetch(`${API_URL}/api/public/lab-status`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Fetched public lab data:', data);
+                    if (Object.keys(data).length === 0) {
+                        console.warn('No lab data received from server');
+                    }
+                    labStatus = data || {};
+                    labContainer.innerHTML = "";
+                    labs.forEach(lab => {
+                        const labDiv = document.createElement("div");
+                        labDiv.className = `lab ${labStatus[lab] ? 'occupied' : 'available'}`;
+                        labDiv.innerHTML = `
+                            <strong>${lab}</strong>: 
+                            <span>${labStatus[lab] !== undefined ? (labStatus[lab] ? "Occupied" : "Available") : "Unknown"}</span>
+                            ${currentUserType === 'user' ? `<button onclick="toggleLabStatus('${lab}')">Toggle</button>` : ''}
+                        `;
+                        labContainer.appendChild(labDiv);
+                    });
+                    $(labContainer).children().hide().each(function(index) {
+                        $(this).delay(index * 50).fadeIn(200);
+                    });
+                    suggestAlternativeLabs();
+                })
+                .catch(error => {
+                    console.error('Error fetching public lab status:', error);
                     alert(`Error fetching lab status: ${error.message}. Check console for details.`);
                 });
         }

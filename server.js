@@ -298,6 +298,38 @@ app.post('/api/lab-status', authenticateToken, async (req, res) => {
     }
 });
 
+// Get public room status (unprotected)
+app.get('/api/public/room-status', async (req, res) => {
+    try {
+        const rooms = await Room.find();
+        const roomStatus = rooms.reduce((acc, room) => {
+            acc[room.room] = room.status;
+            return acc;
+        }, {});
+        console.log('Responding with public room statuses:', roomStatus);
+        res.json(roomStatus);
+    } catch (error) {
+        console.error('Error fetching public room status:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get public lab status (unprotected)
+app.get('/api/public/lab-status', async (req, res) => {
+    try {
+        const labs = await Lab.find();
+        const labStatus = labs.reduce((acc, lab) => {
+            acc[lab.lab] = lab.status;
+            return acc;
+        }, {});
+        console.log('Responding with public lab statuses:', labStatus);
+        res.json(labStatus);
+    } catch (error) {
+        console.error('Error fetching public lab status:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Initialize default rooms and labs if empty
 async function initializeData() {
     try {
