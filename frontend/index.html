@@ -1446,12 +1446,14 @@
                 } else {
                     errorMessage.innerText = 'Invalid passkey';
                     errorMessage.style.display = 'block';
+                    setTimeout(() => errorMessage.style.display = 'none', 2000);
                 }
             })
             .catch(error => {
                 console.error('Error validating passkey:', error);
                 errorMessage.innerText = 'Error validating passkey';
                 errorMessage.style.display = 'block';
+                setTimeout(() => errorMessage.style.display = 'none', 2000);
             });
         }
 
@@ -1603,3 +1605,5 @@
             }
         }
     </script>
+</body>
+</html>
