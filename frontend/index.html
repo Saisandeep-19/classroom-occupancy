@@ -795,6 +795,14 @@
                 <a href="#" class="forgot-password" onclick="forgotPassword()">Forgot Password?</a>
                 <a href="#" class="forgot-password" id="create-account-link" onclick="showPasskeyModal()">Create Account</a>
                 <p class="error-message" id="user-error"></p>
+                <!-- Temporary token input for testing -->
+                <div class="input-container" style="margin-top: 10px;">
+                    <input type="text" id="manual-token" placeholder="Enter Token for Testing" style="width: 100%; padding: 10px;">
+                    <label class="label">Token</label>
+                    <span class="topline"></span>
+                    <span class="underline"></span>
+                </div>
+                <button class="login-button" onclick="setManualToken()" style="margin-top: 5px;">Set Token</button>
             </div>
             <button class="check-status-button" onclick="checkStatus()">Check Status Without Login</button>
         </div>
@@ -1472,7 +1480,7 @@
             const confirmPassword = document.getElementById('confirm-password').value;
             const successMessage = document.getElementById('create-success');
             const errorMessage = document.getElementById('create-error');
-            let token = localStorage.getItem('token');
+            const token = localStorage.getItem('token');
 
             if (!username || !password || !confirmPassword) {
                 errorMessage.innerText = 'All fields are required.';
@@ -1489,31 +1497,12 @@
             }
 
             if (!token) {
-                // Attempt to log in with default admin credentials if no token
-                fetch(`${API_URL}/api/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: 'admin', password: 'admin123' }) // Update these to match your server
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Fallback login failed: ' + (response.statusText || 'Invalid credentials'));
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    token = data.token;
-                    localStorage.setItem('token', token);
-                    proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage);
-                })
-                .catch(err => {
-                    console.error('Login fallback failed:', err);
-                    errorMessage.innerText = 'Please log in with admin credentials first or check server status.';
-                    errorMessage.style.display = 'block';
-                });
-            } else {
-                proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage);
+                errorMessage.innerText = 'Please log in as an admin first to create an account.';
+                errorMessage.style.display = 'block';
+                return;
             }
+
+            proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage);
         }
 
         function proceedWithRegistration(token, username, password, confirmPassword, successMessage, errorMessage) {
@@ -1618,6 +1607,19 @@
             });
         }
 
+        function setManualToken() {
+            const token = document.getElementById('manual-token').value;
+            if (token) {
+                localStorage.setItem('token', token);
+                document.getElementById('user-error').classList.remove('show');
+                alert('Token set successfully. Try creating an account now.');
+            } else {
+                document.getElementById('user-error').innerText = 'Please enter a valid token.';
+                document.getElementById('user-error').classList.add('show');
+                setTimeout(() => document.getElementById('user-error').classList.remove('show'), 2000);
+            }
+        }
+
         window.onclick = function(event) {
             const forgotModal = document.getElementById('forgot-password-modal');
             const createModal = document.getElementById('create-account-modal');
@@ -1634,5 +1636,4 @@
             }
         }
     </script>
-</body>
-</html>
+</body></html>
